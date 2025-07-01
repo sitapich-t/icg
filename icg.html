@@ -1,0 +1,20 @@
+<html>
+    <body>
+        <canvas id="canvas" width="400" height="400"></canvas>
+
+        <script>
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            function plotPixel(x, y, color) {
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, 1, 1);
+            }
+            for(let x = 0; x < 100; x++){
+                let a = 0.01;
+                let y = a * x * x * x;
+                plotPixel(x, y, 'black')
+            }               
+        </script>
+    </body>
+</html>

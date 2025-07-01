@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My First Three.js Cube</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight); // กำหนดขนาดของ Renderer ให้เท่ากับขนาดหน้าจอเบราว์เซอร์
+        document.body.appendChild(renderer.domElement); // เพิ่ม Canvas ของ Renderer เข้าไปใน body ของ HTML
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        const geometry = new THREE.BoxGeometry(1, 1, 1); // สร้างกล่องขนาด 1x1x1 หน่วย
+        const cube = new THREE.Mesh(geometry);
+
+        scene.add(cube);
+        renderer.render(scene, camera);
+
+        function animate(t) {
+            cube.rotation.x = t * 0.001; // หมุนกล่องตามแกน x
+            cube.rotation.y = t * 0.001; // หมุนกล่องตามแกน y
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate); // เรียกใช้ฟังก์ชัน animate ต่อไป
+        }
+        animate(0);
+
+        
+    </script>
+</body>
+</html>
