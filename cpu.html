@@ -22,6 +22,7 @@
 <body>
     <canvas id="myCanvas" width="200" height="200"></canvas>
     <script>
+
         const spaceInvaderSprite = [
             [0, 0, 1, 0, 0, 1, 0, 0],
             [0, 0, 0, 1, 1, 0, 0, 0],
@@ -37,7 +38,6 @@
         const ctx = canvas.getContext('2d');
         const imageData = ctx.createImageData(canvas.width, canvas.height); // สำหรับเก็บข้อมูลพิกเซล
         const data = imageData.data; // array ที่เก็บข้อมูลสีของพิกเซล (RGBA)
-
 
         function putPixel(x, y, r, g, b, a) {
             const index = (y * canvas.width + x) * 4;
@@ -91,7 +91,7 @@
             }
             ctx.putImageData(imageData, 0, 0);
         }
-
+        
         //drawLine(10, 10, 190, 190, 255, 0, 0, 255); // วาดเส้นสีแดง
         //drawLine(10, 190, 190, 10, 255, 0, 0, 255);
         //drawRect(50, 50, 150, 150, 0, 255, 0, 255); // วาดสี่เหลี่ยมสีเขียว
@@ -100,6 +100,41 @@
 
         let posX = 0;
         let dirX =1;
+        let isDraging = false;
+        let preX = 0;
+        let preY = 0; 
+        let mouseX;
+        let mouseY;
+        canvas.addEventListener('mousedown', function (event) {
+            isDraging = true;
+        });
+        canvas.addEventListener('mouseup', function (event) {
+            isDraging = false;
+        });
+
+        canvas.addEventListener('mousemove', function (event) {
+            // คำนวณตำแหน่งใน canvas
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((event.clientX - rect.left) * scaleX);
+            const y = Math.floor((event.clientY - rect.top) * scaleY);
+            
+            if (!isDraging) {
+                preX = x;
+                preY = y;
+                return;
+            } 
+            drawLine(preX, preY, x, y, 255, 0, 0, 255);
+            preX = x;
+            preY = y;
+            //putPixel(preX, preY, 255, 0, 0, 255); // ใส่พิกเซลสีแดง
+            //putPixel(x, y, 255, 0, 0, 255); // ใส่พิกเซลสีแดง
+            ctx.putImageData(imageData, 0, 0); // อัปเดต canvas
+        });
+
+        <!-- click, mousemove, ***mousedown, mouseup -->
+
         // Animation loop
         function animate(){
             if(posX >= 200){
@@ -121,8 +156,8 @@
             ctx.putImageData(imageData, 0, 0); // วาดข้อมูลพิกเซลลงบน canvas
             requestAnimationFrame(animate);
         }
-        
         animate();
+
 
     </script>
 </body>
