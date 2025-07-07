@@ -103,6 +103,24 @@
         let isDraging = false;
         let preX = 0;
         let preY = 0; 
+        let r;
+        let g;
+        let b;
+
+        window.addEventListener('keydown', function (event) {
+            switch (event.key) {
+                case '1' : 
+                    r = 255; g = 0; b = 0;
+                    break;
+                case '2' : 
+                    r = 0; g = 255; b = 0;
+                    break;
+                case '3' : 
+                    r = 0; g = 0; b = 255;
+                    break;
+            }
+        });
+
         canvas.addEventListener('mousedown', function (event) {
             isDraging = true;
         });
@@ -123,7 +141,7 @@
                 preY = y;
                 return;
             } 
-            drawLine(preX, preY, x, y, 255, 0, 0, 255);
+            drawLine(preX, preY, x, y, r, g, b, 255);
             preX = x;
             preY = y;
             //putPixel(preX, preY, 255, 0, 0, 255); // ใส่พิกเซลสีแดง
