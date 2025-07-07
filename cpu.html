@@ -103,9 +103,7 @@
         let isDraging = false;
         let preX = 0;
         let preY = 0; 
-        let r;
-        let g;
-        let b;
+        let r, g, b, a = 255;
 
         window.addEventListener('keydown', function (event) {
             switch (event.key) {
@@ -141,7 +139,7 @@
                 preY = y;
                 return;
             } 
-            drawLine(preX, preY, x, y, r, g, b, 255);
+            drawLine(preX, preY, x, y, r, g, b, a);
             preX = x;
             preY = y;
             //putPixel(preX, preY, 255, 0, 0, 255); // ใส่พิกเซลสีแดง
