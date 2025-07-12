@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>PIXEL</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        canvas {
+            border: 1px solid black;
+            scale: 2;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="myCanvas" width="200" height="200"></canvas>
+    <script>
+
+        const spaceInvaderSprite = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ];
+
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(canvas.width, canvas.height); // สำหรับเก็บข้อมูลพิกเซล
+        const data = imageData.data; // array ที่เก็บข้อมูลสีของพิกเซล (RGBA)
+
+        function putPixel(x, y, r, g, b, a) {
+            const index = (y * canvas.width + x) * 4;
+            data[index] = r; // Red
+            data[index + 1] = g; // Green
+            data[index + 2] = b; // Blue
+            data[index + 3] = a; // Alpha (ความโปร่งใส)
+        }
+        function drawLine(x1, y1, x2, y2, r, g, b, a) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            if (Math.abs(dx) > Math.abs(dy)) { // Iterate along x
+                const m = dy / dx;
+                const c = y1 - m * x1;
+                for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+                    const y = Math.round(m * x + c);
+                    putPixel(x, y, r, g, b, a);
+                }
+            } else { // Iterate along y
+                const m = dx / dy; // Reciprocal slope for y-iteration
+                const c = x1 - m * y1;
+                for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
+                    const x = Math.round(m * y + c);
+                    putPixel(x, y, r, g, b, a);
+                }
+            }
+            ctx.putImageData(imageData, 0, 0); // อัปเดตหลังจากวาดเสร็จ
+        }
+        function drawRect(x1,y1,x2,y2,r,g,b,a) {
+            drawLine(x1, y1, x2, y1, r, g, b, a); // ด้านบน
+            drawLine(x2, y1, x2, y2, r, g, b, a); // ด้านขวา
+            drawLine(x2, y2, x1, y2, r, g, b, a); // ด้านล่าง
+            drawLine(x1, y2, x1, y1, r, g, b, a); // ด้านซ้าย
+        }
+        function drawcCircle(x, y, radius, r, g, b, a) {
+            const r2 = radius * radius;
+            for (let i = 0; i < 360; i++) {
+                const rad = i * Math.PI / 180;
+                const x1 = Math.round(x + radius * Math.cos(rad));
+                const y1 = Math.round(y + radius * Math.sin(rad));
+                putPixel(x1, y1, r, g, b, a);
+            }
+        }
+        function drawSprite(xOffset, yOffset, spriteArray, r, g, b, a) {
+            for (let y = 0; y < spriteArray.length; y++) {
+                for (let x = 0; x < spriteArray[y].length; x++) {
+                    if (spriteArray[y][x] === 1) {
+                        putPixel(xOffset + x, yOffset + y, r, g, b, a);
+                    }
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        //drawLine(10, 10, 190, 190, 255, 0, 0, 255); // วาดเส้นสีแดง
+        //drawLine(10, 190, 190, 10, 255, 0, 0, 255);
+        //drawRect(50, 50, 150, 150, 0, 255, 0, 255); // วาดสี่เหลี่ยมสีเขียว
+        //drawRect(70, 70, 130, 130, 0, 0, 255, 255); // วาดสี่เหลี่ยมสีฟ้า
+        drawSprite(500, 500, spaceInvaderSprite, 255, 255, 0, 255);        
+
+        let posX = 0;
+        let dirX =1;
+        let isDraging = false;
+        let preX = 0;
+        let preY = 0; 
+        let r, g, b, a = 255;
+
+        window.addEventListener('keydown', function (event) {
+            switch (event.key) {
+                case '1' : 
+                    r = 255; g = 0; b = 0;
+                    break;
+                case '2' : 
+                    r = 0; g = 255; b = 0;
+                    break;
+                case '3' : 
+                    r = 0; g = 0; b = 255;
+                    break;
+                case '9' :
+                    r = Math.random()*255; g = Math.random()*255; b = Math.random()*255;
+            }
+        });
+
+        canvas.addEventListener('mousedown', function (event) {
+            isDraging = true;
+        });
+        canvas.addEventListener('mouseup', function (event) {
+            isDraging = false;
+        });
+
+        canvas.addEventListener('mousemove', function (event) {
+            // คำนวณตำแหน่งใน canvas
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((event.clientX - rect.left) * scaleX);
+            const y = Math.floor((event.clientY - rect.top) * scaleY);
+            
+            if (!isDraging) {
+                preX = x;
+                preY = y;
+                return;
+            } 
+            drawLine(preX, preY, x, y, r, g, b, a);
+            preX = x;
+            preY = y;
+            //putPixel(preX, preY, 255, 0, 0, 255); // ใส่พิกเซลสีแดง
+            //putPixel(x, y, 255, 0, 0, 255); // ใส่พิกเซลสีแดง
+            ctx.putImageData(imageData, 0, 0); // อัปเดต canvas
+        });
+
+        <!-- click, mousemove, ***mousedown, mouseup -->
+
+        // Animation loop
+        function animate(){
+            //if(posX >= 200){
+            //    dirX = -1;
+            //}
+            //if(posX <= 0){
+            //    dirX = 1;
+            //}
+            
+            posX += dirX; // อัปเดตตำแหน่ง X
+            drawSprite(posX-1, 100, spaceInvaderSprite, 255, 255, 255, 255);
+            drawSprite(posX+1, 100, spaceInvaderSprite, 255, 255, 255, 255);
+            drawSprite(posX, 100, spaceInvaderSprite, 255, 0, 0, 255);
+            
+            //drawcCircle(posX, 100, 21, 255, 255, 255, 255); //วาดวงกลมสีขาว
+            //drawcCircle(posX, 100, 20, 255, 255, 0, 255); //วาดวงกลมสีเหลือง
+            ctx.putImageData(imageData, 0, 0); // วาดข้อมูลพิกเซลลงบน canvas
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+
+
+    </script>
+</body>
+
+</html>
