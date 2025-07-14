@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>putPixel Demo</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        canvas {
+            border: 1px solid black;
+            image-rendering: pixelated;
+            scale: 3;
+            /* ขยายขนาด canvas */
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="myCanvas" width="200" height="200"></canvas>
+    <script>
+
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // เตรียม buffer ขนาดเท่า canvas
+        const imageData = ctx.createImageData(canvas.width, canvas.height);
+        const data = imageData.data;
+
+        const spaceInvaderSprite = [
+            [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+            [0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1],
+            [0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1],
+            [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
+            [0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
+            [0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
+            [0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
+            [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0],
+            [1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0]
+        ];
+
+        // ฟังก์ชัน putPixel
+        function putPixel(x, y, r, g, b, a) {
+            x = Math.round(x);
+            y = Math.round(y);
+            const index = ((-y + canvas.height / 2) * canvas.width + (x + canvas.width / 2)) * 4;
+            data[index] = r;     // Red
+            data[index + 1] = g; // Green
+            data[index + 2] = b; // Blue
+            data[index + 3] = a; // Alpha
+        }
+
+        function drawLine(x1, y1, x2, y2, r, g, b, a) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const steps = Math.max(Math.abs(dx), Math.abs(dy));
+            const xIncrement = dx / steps;
+            const yIncrement = dy / steps;
+
+            let x = x1;
+            let y = y1;
+
+            for (let i = 0; i <= steps; i++) {
+                putPixel(Math.round(x), Math.round(y), r, g, b, a);
+                x += xIncrement;
+                y += yIncrement;
+            }
+        }
+
+        function drawCircle(cx, cy, radius, r, g, b, a) {
+            for (let y = -radius; y <= radius; y++) {
+                for (let x = -radius; x <= radius; x++) {
+                    if (x * x + y * y <= radius * radius) {
+                        putPixel(cx + x, cy + y, r, g, b, a);
+                    }
+                }
+            }
+        }
+        
+        function drawSprite(x, y, sprite, r, g, b, a, degree, scale=1) {
+            for (let row = 0; row < sprite.length; row++) {
+                for (let col = 0; col < sprite[row].length; col++) {
+                    if (sprite[row][col] === 1) { // ถ้าเป็นพิกเซลที่ต้องวาด
+                        let cX = col - (sprite[row].length / 2);
+                        let cY = row + (sprite.length / 2);
+
+                        const rad = degree * Math.PI / 180;
+                        // หมุนรอบ origin
+                        const x_rot = Math.round(cX * Math.cos(rad) - cY * Math.sin(rad));
+                        const y_rot = Math.round(cX * Math.sin(rad) + cY * Math.cos(rad));
+
+                        const x_scaled = x_rot * scale;
+                        const y_scaled = y_rot * scale;
+
+                        // putPixel(x + x_scaled, y - y_scaled, r, g, b, a); // วาดพิกเซล
+                        drawCircle(x + x_scaled, y - y_scaled, scale, r, g, b, a);
+                    }
+                }
+            }
+        }
+
+        function drawText(text, x, y, r, g, b, a) {
+            const fontSize = 16;
+            ctx.font = `${fontSize}px Arial`;
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+            ctx.fillText(text, x + canvas.width / 2, -y + canvas.height / 2 + fontSize / 2); // ปรับตำแหน่งให้ตรงกลาง
+        }
+
+        function clearCanvas() {
+            data.fill(0); // ล้าง buffer ด้วยสีดำ
+        }
+
+        let objX = 50;
+        let objY = 20;
+        let transX = 0;
+        let transY = 0;
+        let degree = 0;
+        let scale = 1;
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'w') transY = 0.2;
+            else if (event.key === 's') transY = -0.2;
+            if (event.key === 'a') transX = -0.2;
+            else if (event.key === 'd') transX = 0.2;
+            if (event.key === 'q') degree -= 5;
+            else if (event.key === 'e') degree += 5;
+            if (event.key === 'x') scale += 0.1;
+            else if (event.key === 'z') scale -= 0.1;
+        });
+
+        window.addEventListener('keyup', (event) => {
+            if (event.key === 'w' || event.key === 's') transY = 0;
+            else if (event.key === 'a' || event.key === 'd') transX = 0;
+        });
+
+        function animate() {
+            clearCanvas();
+            drawLine(0, 0, 90, 0, 0, 0, 0, 127); // เส้นแนวนอน
+            drawLine(90, 0, 85, -5, 0, 0, 0, 127); // ลูกศร
+            drawLine(90, 0, 85, 5, 0, 0, 0, 127); // ลูกศร
+
+            drawLine(0, 0, 0, 90, 0, 0, 0, 127); // เส้นแนวตั้ง
+            drawLine(0, 90, -5, 85, 0, 0, 0, 127); // ลูกศร
+            drawLine(0, 90, 5, 85, 0, 0, 0, 127); // ลูกศร
+
+            objX = objX + transX;
+            objY = objY + transY;
+
+            if (degree >= 360) degree = 0;
+            const rad = degree * Math.PI / 180;
+            // หมุนรอบ origin
+            const x_rot = Math.round(objX * Math.cos(rad) - objY * Math.sin(rad));
+            const y_rot = Math.round(objX * Math.sin(rad) + objY * Math.cos(rad));
+
+            // จุดเดิม สีแดง
+            // putPixel(0, 0, 255, 0, 0, 255);
+            //putPixel(x_rot, y_rot, 255, 0, 0, 255);
+            drawSprite(objX, objY, spaceInvaderSprite, 255, 0, 0, 255, degree, scale);
+            ctx.putImageData(imageData, 0, 0);
+            drawText("degree: " + degree, 0, -50, 0, 0, 0, 255);
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+        // จุดเดิม
+
+        // วาด buffer กลับไปที่ canvas
+        ctx.putImageData(imageData, 0, 0);
+    </script>
+</body>
+
+</html>

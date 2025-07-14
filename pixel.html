@@ -170,7 +170,7 @@
         <!-- click, mousemove, ***mousedown, mouseup -->
 
         // Animation loop
-        function animate(){
+//        function animate(){
             //if(posX >= 200){
             //    dirX = -1;
             //}
@@ -178,20 +178,42 @@
             //    dirX = 1;
             //}
             
-            posX += dirX; // อัปเดตตำแหน่ง X
-            drawSprite(posX-1, 100, spaceInvaderSprite, 255, 255, 255, 255);
-            drawSprite(posX+1, 100, spaceInvaderSprite, 255, 255, 255, 255);
-            drawSprite(posX, 100, spaceInvaderSprite, 255, 0, 0, 255);
+//            posX += dirX; // อัปเดตตำแหน่ง X
+//           drawSprite(posX-1, 100, spaceInvaderSprite, 255, 255, 255, 255);
+//            drawSprite(posX+1, 100, spaceInvaderSprite, 255, 255, 255, 255);
+//            drawSprite(posX, 100, spaceInvaderSprite, 255, 0, 0, 255);
             
             //drawcCircle(posX, 100, 21, 255, 255, 255, 255); //วาดวงกลมสีขาว
             //drawcCircle(posX, 100, 20, 255, 255, 0, 255); //วาดวงกลมสีเหลือง
-            ctx.putImageData(imageData, 0, 0); // วาดข้อมูลพิกเซลลงบน canvas
-            requestAnimationFrame(animate);
+//            ctx.putImageData(imageData, 0, 0); // วาดข้อมูลพิกเซลลงบน canvas
+//            requestAnimationFrame(animate);
+//        }
+
+        
+//        animate();
+
+        let lastTime = 0;
+        const interval = 20; // milliseconds between updates (e.g., 100ms = 10fps)
+
+        function animate(currentTime) {
+            if (currentTime - lastTime >= interval) {
+                lastTime = currentTime;
+
+                // Update logic
+                posX += dirX;
+
+                // Clear or reset your image data here if needed
+
+                drawSprite(posX - 1, 100, spaceInvaderSprite, 255, 255, 255, 255);
+                drawSprite(posX + 1, 100, spaceInvaderSprite, 255, 255, 255, 255);
+                drawSprite(posX, 100, spaceInvaderSprite, 255, 0, 0, 255);
+
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            requestAnimationFrame(animate); // still called every frame, but only updates when needed
         }
         animate();
-
-
-
     </script>
 </body>
 
