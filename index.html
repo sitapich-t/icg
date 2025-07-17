@@ -50,7 +50,7 @@
         camera.lookAt(0, 0, 0);
 
         // ✅ กล่อง
-        const geometry = new THREE.BoxGeometry(1, 2, 1);
+        const geometry = new THREE.BoxGeometry(2, 2, 1);
         const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
         const cube = new THREE.Mesh(geometry, material);
         cube.castShadow = true; // ✅ กล่องส่งเงา
@@ -76,10 +76,12 @@
         plane.receiveShadow = true; // ✅ พื้นรับเงา
         scene.add(plane);
 
+        let rot_x = 0, rot_y = 0, rot_z = 0;
         // ✅ render loop
         function animate(t) {
-            // cube.rotation.y = t * 0.001;
-            cube.rotation.z = t * 0.01;
+            cube.rotation.x = t * rot_x;
+            cube.rotation.y = t * rot_y;
+            cube.rotation.z = t * rot_z;
 
             sphere.rotation.y = t * 0.001;
 
@@ -94,6 +96,12 @@
             else if (event.key === 's') cube.position.y += -0.2;
             if (event.key === 'a') cube.position.x += -0.2;
             else if (event.key === 'd') cube.position.x += 0.2;
+        });
+
+        window.addEventListener('keyup', (event) => {
+            if (event.key === '1') rot_x = t * 0.001;
+            else if (event.key === '2') rot_y = t * 0.001;
+            else if (event.key === '3') rot_z = t * 0.001;
         });
     </script>
 </body>
