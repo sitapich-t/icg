@@ -79,9 +79,14 @@
         let rot_x = 0, rot_y = 0, rot_z = 0;
         // ✅ render loop
         function animate(t) {
+<<<<<<< HEAD
             cube.rotation.x = t * rot_x;
             cube.rotation.y = t * rot_y;
             cube.rotation.z = t * rot_z;
+=======
+            cube.rotation.y = t * 0.001;
+            cube.rotation.z = t * 0.001 ;
+>>>>>>> b2298693158e4f3c62840aa38ebdf3ddfef064dd
 
             sphere.rotation.y = t * 0.001;
 
