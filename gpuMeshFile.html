@@ -83,7 +83,7 @@
             console.error('Error loading OBJ:', error);
         });
 
-        loader.load('chair.obj', function (object) {
+        loader.load('https://sitapich-t.github.io/icg/chair.obj', function (object) {
             object.castShadow = true; // ✅ วัตถุนี้สร้างเงา
             // ตั้งค่า castShadow กับทุก mesh ใน object
         object.traverse(function (child) {
