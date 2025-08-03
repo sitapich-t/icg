@@ -83,6 +83,21 @@
             console.error('Error loading OBJ:', error);
         });
 
+        loader.load('chair.obj', function (object) {
+            object.castShadow = true; // ✅ วัตถุนี้สร้างเงา
+            // ตั้งค่า castShadow กับทุก mesh ใน object
+        object.traverse(function (child) {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = false;
+            child.material.side = THREE.DoubleSide;
+          }
+        });
+            scene.add(object);
+        }, undefined, function (error) {
+            console.error('Error loading OBJ:', error);
+        });
+
         // ✅ render loop
         function animate(t) {
 
