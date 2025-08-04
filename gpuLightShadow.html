@@ -40,7 +40,7 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
         // ✅ Ambient Light เล็กน้อยให้สว่างรวม
-        const ambientLight = new THREE.AmbientLight(0x605040);
+        const ambientLight = new THREE.AmbientLight(0x606060, 0.5);
         scene.add(ambientLight);
 
         // ✅ Directional Light ที่สร้างเงา
@@ -53,6 +53,8 @@
         pointLight.position.set(0, 3, 1);
         pointLight.castShadow = true;
         scene.add(pointLight);
+        const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.5);
+        scene.add(pointLightHelper);
 
         const spotLightR = new THREE.SpotLight(0xff0000, 1);
         spotLightR.angle = Math.PI / 8;
@@ -127,7 +129,16 @@
 
         // ✅ render loop
         function animate(t) {
-
+            pointLight.position.x = Math.sin(t / 1000) * 1.5;
+            pointLight.position.z = Math.cos(t / 1000) * 1.5;
+            directionalLight.position.x = Math.sin(t / 2000) * 10;
+            //directionalLight.position.z = Math.cos(t / 1000) * 10;
+            spotLightR.position.x = 3 + Math.cos(t / 1000) * 2;
+            spotLightR.position.z = -2 + Math.cos(t / 1000) * 2;
+            spotLightB.position.x = 4 + Math.cos(t / 1000) * 2;
+            spotLightB.position.z = -2 + Math.cos(t / 1000) * 2;
+            spotLightY.position.x = 3.5 + Math.cos(t / 1000) * 2;
+            spotLightY.position.z = -1 + Math.cos(t / 1000) * 2;
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
         }
