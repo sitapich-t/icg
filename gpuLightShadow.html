@@ -44,15 +44,42 @@
         scene.add(ambientLight);
 
         // ✅ Directional Light ที่สร้างเงา
-        const directionalLight = new THREE.DirectionalLight(0xffeeee, 0.7);
+        const directionalLight = new THREE.DirectionalLight(0xffff00, 0.7);
         directionalLight.position.set(10, 5, 10);
         directionalLight.castShadow = true;
         scene.add(directionalLight);
 
-        const pointLight = new THREE.PointLight(0xffffff, 0.8, 8);
+        const pointLight = new THREE.PointLight(0xff00ff, 0.8, 8);
         pointLight.position.set(0, 3, 1);
         pointLight.castShadow = true;
         scene.add(pointLight);
+
+        const spotLightR = new THREE.SpotLight(0xff0000, 1);
+        spotLightR.angle = Math.PI / 8;
+        spotLightR.position.set(3, 2, -2);
+        spotLightR.castShadow = true;
+        spotLightR.target.position.set(3, 0, -2);
+        spotLightR.distance = 5;
+        scene.add(spotLightR);
+        scene.add(spotLightR.target);
+
+        const spotLightB = new THREE.SpotLight(0x0000ff, 1);
+        spotLightB.angle = Math.PI / 8;
+        spotLightB.position.set(4, 2, -2);
+        spotLightB.castShadow = true;
+        spotLightB.target.position.set(4, 0, -2);
+        spotLightB.distance = 5;
+        scene.add(spotLightB);
+        scene.add(spotLightB.target);
+
+        const spotLightY = new THREE.SpotLight(0x00ff00, 1);
+        spotLightY.angle = Math.PI / 8;
+        spotLightY.position.set(3.5, 2, -1);
+        spotLightY.castShadow = true;
+        spotLightY.target.position.set(3.5, 0, -1);
+        spotLightY.distance = 5;
+        scene.add(spotLightY);
+        scene.add(spotLightY.target);
 
         // ✅ พื้น
         const planeGeometry = new THREE.PlaneGeometry(10, 10);
