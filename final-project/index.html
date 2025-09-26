@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Final Project</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden
+        }
+
+        canvas {
+            display: block
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/dat.gui.min.js"></script>
+
+</head>
+
+<body>
+    <script>
+        (() => {
+            // --- Scene / Camera / Renderer ---
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+            camera.position.set(0, 1.2, 4);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(innerWidth, innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 0.5, 0);
+            controls.enableDamping = true;
+
+            // --- Ground (เส้นกริดช่วยกะระยะ) ---
+            const grid = new THREE.GridHelper(10, 10, 0x666666, 0x333333);
+            grid.position.y = -0.001;
+            scene.add(grid);
+
+            const pmrem = new THREE.PMREMGenerator(renderer);
+            pmrem.compileEquirectangularShader();
+            new THREE.RGBELoader()
+                .setDataType(THREE.UnsignedByteType)
+                .load(
+                    // Poly Haven (CORS OK)
+                    "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/industrial_pipe_and_valve_01_1k.hdr",
+                    (hdr) => {
+                        const envMap = pmrem.fromEquirectangular(hdr).texture;
+                        scene.environment = envMap;   // ใช้เป็น IBL
+                        scene.background = envMap;   // โชว์เป็นพื้นหลังด้วย
+                        hdr.dispose();
+                        pmrem.dispose();
+                    }
+                );
+
+            // --- Objects (3 ชิ้น / สีต่างกัน / ไม่ต้องมีไฟเพราะใช้ MeshBasic) ---
+            const clickable = [];
+            let cameraTarget = new THREE.Vector3();
+            let cameraPosition = new THREE.Vector3(0, 1.2, 4);
+
+            const texLoader = new THREE.TextureLoader();
+
+            const objBase = texLoader.load(
+                "https://raw.githubusercontent.com/sitapich-t/icg/main/mat0_baseColor.png",
+                (t) => { t.encoding = THREE.sRGBEncoding; }
+            );
+
+            const objBase2 = texLoader.load(
+                "https://raw.githubusercontent.com/sitapich-t/icg/main/mat0.004_baseColor.png",
+                (t) => { t.encoding = THREE.sRGBEncoding; }
+            );
+            const objLoader = new THREE.OBJLoader();
+            objLoader.load("https://sitapich-t.github.io/icg/rifle.obj", (object) => {
+                object.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material = new THREE.MeshStandardMaterial({
+                            map: objBase,
+                            normalMap: objBase2,
+                            metalness: 1.0,     // ให้เห็น reflection จาก HDRI ชัด
+                            roughness: 0.35,
+                            envMapIntensity: 1.0
+                        });
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                object.position.y = 0;
+                object.position.x = -3;
+                scene.add(object);
+            });
+
+            // --- พรีเซ็ตตำแหน่งกล้องต่อวัตถุ (กำหนดง่าย ๆ) ---
+            const VIEWS = {
+                Box: { pos: new THREE.Vector3(-3, 1.4, 1.6), tar: new THREE.Vector3(-2, 0.4, 0) },
+                Sphere: { pos: new THREE.Vector3(0, 1.8, 3.0), tar: new THREE.Vector3(0, 0.45, 0) },
+                Cone: { pos: new THREE.Vector3(3, 1.6, -2.0), tar: new THREE.Vector3(2, 0.5, 0) },
+                Cylinder: { pos: new THREE.Vector3(0, 5.6, 3.0), tar: new THREE.Vector3(0, 0.5, -2) },
+            };
+
+            // --- Raycaster + คลิกเพื่อสลับมุม ---
+            const raycaster = new THREE.Raycaster();
+            const pointer = new THREE.Vector2();
+
+            function setPointer(e) {
+                const r = renderer.domElement.getBoundingClientRect();
+                const x = (e.clientX ?? e.touches[0].clientX) - r.left;
+                const y = (e.clientY ?? e.touches[0].clientY) - r.top;
+                pointer.x = (x / r.width) * 2 - 1;
+                pointer.y = -(y / r.height) * 2 + 1;
+            }
+
+            function onPick(e) {
+                setPointer(e);
+                raycaster.setFromCamera(pointer, camera);
+                const hit = raycaster.intersectObjects(clickable, false)[0];
+                if (!hit) return;
+                const view = VIEWS[hit.object.name];
+                cameraTarget = hit.object.position;
+                cameraPosition = view.pos;
+                if (!view) return;
+
+                // ย้ายแบบทันที (ถ้าอยากนุ่ม ๆ ค่อยเสริม lerp ทีหลัง)
+                //camera.position.copy(view.pos);
+                //controls.target.copy(view.tar);
+                controls.update();
+            }
+
+            renderer.domElement.addEventListener('click', onPick);
+            renderer.domElement.addEventListener('touchend', (e) => { onPick(e); }, { passive: true });
+
+            // --- Resize ---
+            addEventListener('resize', () => {
+                camera.aspect = innerWidth / innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(innerWidth, innerHeight);
+            });
+
+            function lerp(a, b, t) {
+                return a + (b - a) * t;   // t ใน [0..1]
+            }
+
+
+            // --- Loop ---
+            function loop() {
+                controls.update();
+                renderer.render(scene, camera);
+
+                requestAnimationFrame(loop);
+            }
+            loop();
+        })();
+    </script>
+</body>
+
+</html>
