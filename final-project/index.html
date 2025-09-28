@@ -22,6 +22,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/dat.gui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/helpers/RectAreaLightHelper.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
 
 </head>
 
@@ -36,10 +39,30 @@
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(innerWidth, innerHeight);
             document.body.appendChild(renderer.domElement);
+            renderer.physicallyCorrectLights = true;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
 
+            THREE.RectAreaLightUniformsLib.init();
+
+            // --- Rect Area Light ---
+            const areaLight = new THREE.RectAreaLight(0xffffff, 15.0, 2.0, 1.0); // (color, intensity, width, height)
+            areaLight.position.set(0, 2.0, 2.0);   // put it in front and above
+            areaLight.lookAt(0, 0.5, 0);           // IMPORTANT: point it at your subject
+            scene.add(areaLight);
+
+            // visualize the panel so you know where it faces
+            const areaHelper = new THREE.RectAreaLightHelper(areaLight);
+            areaLight.add(areaHelper);
+
+            // --- Controls ---
             const controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.target.set(0, 0.5, 0);
             controls.enableDamping = true;
+            controls.enableZoom = true;
+            controls.enablePan = true;
+            controls.enable = true;
 
             // --- Ground (เส้นกริดช่วยกะระยะ) ---
             const grid = new THREE.GridHelper(10, 10, 0x666666, 0x333333);
@@ -69,22 +92,14 @@
 
             const texLoader = new THREE.TextureLoader();
 
-            const objBase = texLoader.load(
-                "https://raw.githubusercontent.com/sitapich-t/icg/main/mat0_baseColor.png",
-                (t) => { t.encoding = THREE.sRGBEncoding; }
-            );
+            
 
-            const objBase2 = texLoader.load(
-                "https://raw.githubusercontent.com/sitapich-t/icg/main/mat0.004_baseColor.png",
-                (t) => { t.encoding = THREE.sRGBEncoding; }
-            );
             const objLoader = new THREE.OBJLoader();
-            objLoader.load("https://sitapich-t.github.io/icg/rifle.obj", (object) => {
+            objLoader.load("https://sitapich-t.github.io/icg/final-project/room.obj", (object) => {
                 object.traverse((child) => {
                     if (child.isMesh) {
                         child.material = new THREE.MeshStandardMaterial({
-                            map: objBase,
-                            normalMap: objBase2,
+                            color: 0xffccbe,
                             metalness: 1.0,     // ให้เห็น reflection จาก HDRI ชัด
                             roughness: 0.35,
                             envMapIntensity: 1.0
@@ -93,8 +108,8 @@
                         child.receiveShadow = true;
                     }
                 });
-                object.position.y = 0;
-                object.position.x = -3;
+                object.position.y = 1.4;
+                object.position.x = 0;
                 scene.add(object);
             });
 
@@ -106,48 +121,12 @@
                 Cylinder: { pos: new THREE.Vector3(0, 5.6, 3.0), tar: new THREE.Vector3(0, 0.5, -2) },
             };
 
-            // --- Raycaster + คลิกเพื่อสลับมุม ---
-            const raycaster = new THREE.Raycaster();
-            const pointer = new THREE.Vector2();
-
-            function setPointer(e) {
-                const r = renderer.domElement.getBoundingClientRect();
-                const x = (e.clientX ?? e.touches[0].clientX) - r.left;
-                const y = (e.clientY ?? e.touches[0].clientY) - r.top;
-                pointer.x = (x / r.width) * 2 - 1;
-                pointer.y = -(y / r.height) * 2 + 1;
-            }
-
-            function onPick(e) {
-                setPointer(e);
-                raycaster.setFromCamera(pointer, camera);
-                const hit = raycaster.intersectObjects(clickable, false)[0];
-                if (!hit) return;
-                const view = VIEWS[hit.object.name];
-                cameraTarget = hit.object.position;
-                cameraPosition = view.pos;
-                if (!view) return;
-
-                // ย้ายแบบทันที (ถ้าอยากนุ่ม ๆ ค่อยเสริม lerp ทีหลัง)
-                //camera.position.copy(view.pos);
-                //controls.target.copy(view.tar);
-                controls.update();
-            }
-
-            renderer.domElement.addEventListener('click', onPick);
-            renderer.domElement.addEventListener('touchend', (e) => { onPick(e); }, { passive: true });
-
             // --- Resize ---
             addEventListener('resize', () => {
                 camera.aspect = innerWidth / innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(innerWidth, innerHeight);
             });
-
-            function lerp(a, b, t) {
-                return a + (b - a) * t;   // t ใน [0..1]
-            }
-
 
             // --- Loop ---
             function loop() {
