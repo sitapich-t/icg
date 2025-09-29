@@ -1,0 +1,116 @@
+// Ground
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(50, 50),
+                new THREE.MeshStandardMaterial({ color: 0x2a2d34, roughness: 1 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+
+// --- Load MTL -> OBJ ---
+            const mtlLoader = new THREE.MTLLoader();
+            // ตั้ง path ถ้าไฟล์อยู่คนละโฟลเดอร์ เช่น mtlLoader.setPath('/assets/');
+            mtlLoader.load('https://sitapich-t.github.io/icg/final-project/room.mtl', (materials) => {
+                materials.preload();
+
+                const objLoader = new THREE.OBJLoader();
+                objLoader.setMaterials(materials);
+
+                objLoader.load(
+                    'https://sitapich-t.github.io/icg/final-project/room.obj',
+                    (object) => {
+                        // ปรับค่าตามต้องการ
+                        object.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                                // ถ้าอยากบังคับวัสดุเป็น PBR มาตรฐาน แทนวัสดุจาก MTL:
+                                // child.material = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.6 });
+                            }
+                        });
+
+                        // scale / position (แก้ตามโมเดลจริง)
+                        object.scale.set(1, 1, 1);
+                        object.position.set(0, 1.45, 0);
+                        object.rotation.y = Math.PI * 0.0;
+
+                        scene.add(object);
+                    },
+                    (xhr) => {
+                        // progress (optional)
+                        if (xhr.lengthComputable) {
+                            const pct = (xhr.loaded / xhr.total * 100).toFixed(1);
+                            console.log(`Loading OBJ: ${pct}%`);
+                        }
+                    },
+                    (err) => {
+                        console.error('เกิดข้อผิดพลาดตอนโหลด OBJ:', err);
+                    }
+                );
+            }, undefined, (err) => {
+                console.error('เกิดข้อผิดพลาดตอนโหลด MTL:', err);
+            });
+
+
+
+
+
+
+const mtlLoader = new THREE.MTLLoader();
+            mtlLoader.load('https://sitapich-t.github.io/icg/final-project/room.mtl', (materials) => {
+                materials.preload();
+
+                const objLoader = new THREE.OBJLoader();
+                objLoader.setMaterials(materials);
+                objLoader.load('https://sitapich-t.github.io/icg/final-project/room.obj', (object) => {
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            // force PBR so RectAreaLight affects it
+                            child.material = new THREE.MeshStandardMaterial({
+                                map: child.material.map,   // <-- the diffuse/baseColor texture from .mtl
+                                metalness: 0.0,
+                                roughness: 0.5,
+                                envMapIntensity: 0.3
+                            });
+                        }
+                    });
+
+                    object.position.set(0, 1.45, 0);
+                    scene.add(object);
+                    areaLight.lookAt(object.position);
+
+                    controls.target.copy(object.position);
+                    controls.update();
+                });
+            });
+
+
+
+
+
+
+const objBase = texLoader.load(
+                "https://sitapich-t.github.io/icg/final-project/room.mtl",
+                (t) => { t.encoding = THREE.sRGBEncoding; }
+            );
+
+            const objLoader = new THREE.OBJLoader();
+            objLoader.load("https://sitapich-t.github.io/icg/final-project/room.obj", (object) => {
+                object.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material = new THREE.MeshStandardMaterial({
+                            map: objBase,
+                            normalMap: objBase2,
+                            metalness: 1.0,     // ให้เห็น reflection จาก HDRI ชัด
+                            roughness: 0.35,
+                            envMapIntensity: 1.0
+                        });
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                object.position.y = 0;
+                object.position.x = -3;
+                scene.add(object);
+            });
