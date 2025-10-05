@@ -105,14 +105,14 @@
             // --- Load MTL -> OBJ ---
             const mtlLoader = new THREE.MTLLoader();
             // ตั้ง path ถ้าไฟล์อยู่คนละโฟลเดอร์ เช่น mtlLoader.setPath('/assets/');
-            mtlLoader.load('https://sitapich-t.github.io/icg/final-project/room.mtl', (materials) => {
+            mtlLoader.load('https://sitapich-t.github.io/icg/final-project/home.mtl', (materials) => {
                 materials.preload();
 
                 const objLoader = new THREE.OBJLoader();
                 objLoader.setMaterials(materials);
 
                 objLoader.load(
-                    'https://sitapich-t.github.io/icg/final-project/room.obj',
+                    'https://sitapich-t.github.io/icg/final-project/home.obj',
                     (object) => {
                         // ปรับค่าตามต้องการ
                         object.traverse((child) => {
