@@ -102,6 +102,15 @@
             grid.position.y = -0.001;
             scene.add(grid);
 
+            const textureLoader2 = new THREE.TextureLoader();
+            textureLoader2.load('https://sitapich-t.github.io/icg/final-project/blink.jpg', function (texture) {
+                const geometry = new THREE.PlaneGeometry(2, 2);
+                const material = new THREE.MeshBasicMaterial({ map: texture });
+                const plane = new THREE.Mesh(geometry, material);
+                plane.position.set(3.8, 8, -4);
+                scene.add(plane);
+            });
+
             // --- Load MTL -> OBJ ---
             const mtlLoader = new THREE.MTLLoader();
             // ตั้ง path ถ้าไฟล์อยู่คนละโฟลเดอร์ เช่น mtlLoader.setPath('/assets/');
@@ -164,3 +173,4 @@
 
 
 </html>
+
