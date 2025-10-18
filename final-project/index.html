@@ -2,175 +2,750 @@
 <html lang="th">
 
 <head>
-    <meta charset="utf-8" />
-    <title>Portfolio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
-        }
+  <meta charset="utf-8" />
+  <title>Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0
+    }
 
-        canvas {
-            display: block;
-        }
-
-        .info {
-            position: fixed;
-            left: 12px;
-            top: 10px;
-            padding: 6px 10px;
-            background: rgba(0, 0, 0, .55);
-            color: #fff;
-            font: 14px/1.4 system-ui;
-            border-radius: 8px;
-        }
-    </style>
-
-    <!-- Three.js core (r128) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-
-    <!-- Controls & Loaders from examples (ต้องใช้เวอร์ชันเดียวกันกับ core) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
-
+    canvas {
+      display: block
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 
 <body>
-    <!-- <div class="info">Orbit: เมาส์ซ้ายหมุน • กลางแพน • ลูกล้อซูม</div> -->
+  <script>
+    // --- Scene / Camera / Renderer ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
 
-    <script>
-        (() => {
-            // --- Scene / Camera / Renderer ---
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x111318);
+    const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(2, 1, -3);
 
-            const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 1000);
-            camera.position.set(2.5, 1.6, 3.5);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setPixelRatio(devicePixelRatio);
-            renderer.setSize(innerWidth, innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
-            renderer.outputEncoding = THREE.sRGBEncoding; // r128
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
-            const controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.target.set(0, 0.9, 0);
-            controls.update();
+    // --- Lights ---
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x333333, 0.6);
+    scene.add(hemi);
 
-            // --- Lights ---
-            const hemi = new THREE.HemisphereLight(0xffffff, 0x222233, 0.7);
-            scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir.position.set(3, 5, 2);
+    dir.castShadow = true;
+    scene.add(dir);
 
-            const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-            dir.position.set(5, 6, 4);
-            dir.castShadow = true;
-            dir.shadow.mapSize.set(2048, 2048);
-            scene.add(dir);
+    // --- Ground ---
+    const ground = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(10, 10),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, metalness: 0.0 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
 
-            // --- Environment Map (Equirect JPG/PNG) ---
-            const pmremGenerator = new THREE.PMREMGenerator(renderer);
-            pmremGenerator.compileEquirectangularShader();
+    // --- Upgrade env with equirect (PMREM) ---
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    new THREE.TextureLoader().load(
+      'https://sitapich-t.github.io/icg/final-project/kloppenheim_02.jpg',
+      (tex) => {
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        tex.encoding = THREE.SRGBEncoding;
+        const envRT = pmrem.fromEquirectangular(tex).texture;
+        scene.environment = envRT;   // สะท้อนสวยขึ้นสำหรับ PBR
+        scene.background = tex;     // ฉากหลังชัด (ถ้าอยากเบลอ ใช้ envRT แทน)
 
-            new THREE.TextureLoader().load(
-                'https://sitapich-t.github.io/icg/final-project/4452.jpg', // ต้องเป็นภาพ equirectangular (2:1)
-                (tex) => {
-                    tex.mapping = THREE.EquirectangularReflectionMapping;
-                    tex.encoding = THREE.sRGBEncoding; // r128
+        if (ball && ball.material) {
+          ball.material.envMap = envRT;
+          ball.material.needsUpdate = true;
+        }
 
-                    // ใช้ PMREM เพื่อให้ MeshStandardMaterial สะท้อนแสงถูกต้อง
-                    const envMap = pmremGenerator.fromEquirectangular(tex).texture;
+        pmrem.dispose();
+      },
+      undefined,
+      (err) => console.error('โหลด JPG environment ไม่สำเร็จ:', err)
+    );
 
-                    scene.environment = envMap;  // ใช้เป็น reflection สำหรับวัสดุ PBR
-                    scene.background = tex;     // พื้นหลังเป็นภาพเดิม (หรือจะใช้ envMap ก็ได้ถ้าอยากเบลอ)
+    // --- Grid helper ---
+    const grid = new THREE.GridHelper(10, 10, 0x666666, 0x333333);
+    grid.position.y = -0.001;
+    scene.add(grid);
 
-                    // เก็บกวาดหน่วยความจำ
-                    pmremGenerator.dispose();
-                    // อย่า tex.dispose() ถ้ายังใช้เป็น background
-                },
-                undefined,
-                (err) => console.error('โหลด JPG environment ไม่สำเร็จ:', err)
+    // --- References we need later ---
+    let abtmeModel = null;
+    let imgMesh = null;
+    let nameModel = null;
+    let backModel = null;
+    let backModel2 = null;
+    let wetSignModel = null;
+    let workModel = null;
+    let nextModel = null;
+    let nextModel2 = null;
+    let ball = null;
+    let torusMesh = null;
+    let vertShader = null;
+
+    // --- Apartment model ---
+    const gltfLoader = new THREE.GLTFLoader();
+    gltfLoader.load(
+      'https://sitapich-t.github.io/icg/final-project/apartment_floor_plan.glb',
+      (gltf) => {
+        const apmtModel = gltf.scene || gltf.scenes[0];
+        apmtModel.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+        apmtModel.position.set(2, -1.2, 0);
+        apmtModel.scale.set(0.5, 0.5, 0.5);
+        scene.add(apmtModel);
+      },
+      undefined,
+      (error) => console.error('Error loading apartment glTF:', error)
+    );
+
+    const wetSignLoader = new THREE.GLTFLoader();
+    wetSignLoader.load(
+      'https://sitapich-t.github.io/icg/final-project/wet_floor_sign.glb',
+      (gltf) => {
+        wetSignModel = gltf.scene || gltf.scenes[0];
+        wetSignModel.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+        wetSignModel.position.set(3.8, 0.29, -3.8);
+        wetSignModel.scale.set(0.01, 0.01, 0.01);
+        wetSignModel.rotation.set(0, 0, 0);
+        scene.add(wetSignModel);
+
+        // ตั้งกล้องให้ "เริ่มต้นจับ about me"
+        focusCameraTo(
+          wetSignModel.position,
+          { distance: 2.0, height: 0.6, fromDir: new THREE.Vector3(1, 1, -1) },
+          0.8
+        );
+      },
+      undefined,
+      (error) => console.error('Error loading name glTF:', error)
+    );
+
+    const workLoader = new THREE.GLTFLoader();
+    workLoader.load(
+      'https://sitapich-t.github.io/icg/final-project/work.glb',
+      (gltf) => {
+        workModel = gltf.scene || gltf.scenes[0];
+        workModel.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+
+        workModel.position.set(1, 1, -3);
+        workModel.scale.set(0.17, 0.17, 0.17);
+        workModel.rotation.set(0, -Math.PI / 2, 0);
+        scene.add(workModel);
+      },
+      undefined,
+      (error) => console.error('Error loading aboutme glTF:', error)
+    );
+
+    // --- About me (target to click) ---
+    const abtLoader = new THREE.GLTFLoader();
+    abtLoader.load(
+      'https://sitapich-t.github.io/icg/final-project/abtme.glb',
+      (gltf) => {
+        abtmeModel = gltf.scene || gltf.scenes[0];
+        abtmeModel.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+
+        abtmeModel.position.set(1, 1.2, -3);
+        abtmeModel.scale.set(0.17, 0.17, 0.17);
+        abtmeModel.rotation.set(0, -Math.PI / 2, 0);
+        scene.add(abtmeModel);
+      },
+      undefined,
+      (error) => console.error('Error loading aboutme glTF:', error)
+    );
+
+    // --- Image (portrait) ---
+    const texLoader = new THREE.TextureLoader();
+    texLoader.load('https://sitapich-t.github.io/icg/final-project/blink.jpg', (texture) => {
+      // ใช้ BoxGeometry ก็ได้ แต่วางใจได้ว่ากล้องจะอยู่ด้านหน้าแน่ๆ เพราะเราคำนวณจาก normal ของ +Z
+      const imgGeo = new THREE.BoxGeometry(0.5, 0.5, 0.05);
+      const imgMat = new THREE.MeshBasicMaterial({ map: texture });
+      imgMesh = new THREE.Mesh(imgGeo, imgMat);
+      imgMesh.position.set(4.1, 1.05, 0.45);
+      imgMesh.scale.set(1.1, 1.1, 1.1);
+      imgMesh.rotation.set(-Math.PI / 2, -Math.PI / 2, -Math.PI / 2);
+      imgMesh.castShadow = false;
+      imgMesh.receiveShadow = false;
+      scene.add(imgMesh);
+    });
+
+    // --- Name model ---
+    const nameLoader = new THREE.GLTFLoader();
+    nameLoader.load(
+      'https://sitapich-t.github.io/icg/final-project/name.glb',
+      (gltf) => {
+        nameModel = gltf.scene || gltf.scenes[0];
+        nameModel.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+        nameModel.position.set(4.1, 1.58, 0.2);
+        nameModel.scale.set(0.1, 0.1, 0.1);
+        nameModel.rotation.set(-Math.PI / 2, Math.PI, -Math.PI / 2);
+        scene.add(nameModel);
+      },
+      undefined,
+      (error) => console.error('Error loading name glTF:', error)
+    );
+
+    const backLoader = new THREE.GLTFLoader();
+    backLoader.load(
+      'https://sitapich-t.github.io/icg/final-project/back.glb',
+      (gltf) => {
+        backModel = gltf.scene || gltf.scenes[0];
+        backModel.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+        backModel.position.set(4.1, 0.8, -0.13);
+        backModel.scale.set(0.1, 0.1, 0.1);
+        scene.add(backModel);
+      },
+      undefined,
+      (error) => console.error('Error loading name glTF:', error)
+    );
+
+    const backLoader2 = new THREE.GLTFLoader();
+    backLoader2.load(
+      'https://sitapich-t.github.io/icg/final-project/back.glb',
+      (gltf) => {
+        backModel2 = gltf.scene || gltf.scenes[0];
+        backModel2.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+        backModel2.position.set(3.65, 0.4, 3.2);
+        backModel2.scale.set(0.1, 0.1, 0.1);
+        backModel2.rotation.set(0, -Math.PI/2, 0);
+        scene.add(backModel2);
+      },
+      undefined,
+      (error) => console.error('Error loading name glTF:', error)
+    );
+
+    const nextLoader = new THREE.GLTFLoader();
+    nextLoader.load(
+      'https://sitapich-t.github.io/icg/final-project/next.glb',
+      (gltf) => {
+        nextModel = gltf.scene || gltf.scenes[0];
+        nextModel.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+        nextModel.position.set(0, 0.75, 0.45);
+        nextModel.scale.set(0.1, 0.1, 0.1);
+        nextModel.rotation.set(0, Math.PI / 8, 0);
+        scene.add(nextModel);
+      },
+      undefined,
+      (error) => console.error('Error loading name glTF:', error)
+    );
+
+    const nextLoader2 = new THREE.GLTFLoader();
+    nextLoader2.load(
+      'https://sitapich-t.github.io/icg/final-project/next.glb',
+      (gltf) => {
+        nextModel2 = gltf.scene || gltf.scenes[0];
+        nextModel2.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material && (node.material.isMeshStandardMaterial || node.material.isMeshPhysicalMaterial)) {
+              node.material.needsUpdate = true;
+            }
+          }
+        });
+        nextModel2.position.set(-3, 1, -2);
+        nextModel2.scale.set(0.1, 0.1, 0.1);
+        nextModel2.rotation.set(0, Math.PI / 4, 0);
+        scene.add(nextModel2);
+      },
+      undefined,
+      (error) => console.error('Error loading name glTF:', error)
+    );
+
+    // ===== Helpers: world-front direction for any object =====
+    // นิยาม: ด้านหน้าใช้แกน +Z ของ local object (เหมือนหน้า Plane/Box ด้านหน้า)
+    // กล้องจะถูกวางไปตามทิศ -front เพื่อมองเข้าหาวัตถุจากด้านหน้าเสมอ
+    const _tmpQ = new THREE.Quaternion();
+    function getWorldFrontDir(obj) {
+      const q = obj.getWorldQuaternion(_tmpQ);
+      const localFront = new THREE.Vector3(0, 0, 1); // +Z
+      const worldFront = localFront.clone().applyQuaternion(q).normalize();
+      return worldFront;
+    }
+
+    // --- Simple camera tween (position + controls.target) ---
+    let tween = null;
+    function focusCameraTo(lookAtVec3, opts = {}, duration = 1.0) {
+      const { distance = 2.0, height = 0.0, fromDir = new THREE.Vector3(0, 0, 1) } = opts;
+
+      // คำนวณตำแหน่งกล้องจากทิศทาง + ระยะ + ความสูง
+      const dirNorm = fromDir.clone().normalize();
+      const destPos = new THREE.Vector3(
+        lookAtVec3.x + dirNorm.x * distance,
+        lookAtVec3.y + height,
+        lookAtVec3.z + dirNorm.z * distance
+      );
+
+      tween = {
+        t: 0,
+        d: Math.max(0.001, duration),
+        fromPos: camera.position.clone(),
+        toPos: destPos,
+        fromTarget: controls.target.clone(),
+        toTarget: lookAtVec3.clone()
+      };
+    }
+
+    // --- คำนวณ focus ของ "รูป + ชื่อ" (ใช้ front จริงของ imgMesh) ---
+    function getProfileFocus(duration = 1.0) {
+      if (!(imgMesh && nameModel)) return null;
+
+      const boxImg = new THREE.Box3().setFromObject(imgMesh);
+      const boxName = new THREE.Box3().setFromObject(nameModel);
+      const boxAll = boxImg.union(boxName);
+
+      const center = boxAll.getCenter(new THREE.Vector3());
+      const size = boxAll.getSize(new THREE.Vector3());
+      const maxSize = Math.max(size.x, size.y, size.z);
+
+      const worldFront = getWorldFrontDir(imgMesh);     // กล้องต้องไปอยู่ "ตรงข้าม" หน้านี้
+      const fromDir = worldFront.clone();   // มองเข้าหาหน้า
+
+      const height = Math.max(0.2, size.y * 0.15);
+
+      const distance = Math.max(1.2, maxSize * 2.0);
+
+      fromDir.y += 0.08;
+
+      return { center, distance, height, fromDir, duration };
+    }
+
+    function getBallFocus(duration = 1.0) {
+      if (!ball) return null;
+
+      const box = new THREE.Box3().setFromObject(ball);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxSize = Math.max(size.x, size.y, size.z);
+
+      // มุมกล้องเฉียงจากด้านหน้าเล็กน้อย
+      const fromDir = new THREE.Vector3(0.6, 0.15, 1).normalize();
+      const height = Math.max(0.2, maxSize * 0.2);
+      const distance = Math.max(1.2, maxSize * 2.2);
+
+      return { center, distance, height, fromDir, duration };
+    }
+
+    function getTorusFocus(duration = 1.0) {
+      if (!torusMesh) return null;
+
+      const box = new THREE.Box3().setFromObject(torusMesh);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxSize = Math.max(size.x, size.y, size.z);
+
+      // มุมกล้องเฉียงจากด้านหน้าเล็กน้อย
+      const fromDir = new THREE.Vector3(0.6, 0.15, 1).normalize();
+      const height = Math.max(0.2, maxSize * 0.2);
+      const distance = Math.max(1.2, maxSize * 2.2);
+
+      return { center, distance, height, fromDir, duration };
+    }
+
+    function getvertShaderFocus(duration = 1.0) {
+      if (!vertShader) return null;
+
+      const box = new THREE.Box3().setFromObject(vertShader);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxSize = Math.max(size.x, size.y, size.z);
+
+      // มุมกล้องเฉียงจากด้านหน้าเล็กน้อย
+      const fromDir = new THREE.Vector3(0.6, 0.15, 1).normalize();
+      const height = Math.max(0.2, maxSize * 0.2);
+      const distance = Math.max(1.2, maxSize * 2.2);
+
+      return { center, distance, height, fromDir, duration };
+    }
+
+    // --- Raycaster: คลิก abtme -> โฟกัสรูป+ชื่อ ด้านหน้าแน่นอน ---
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function flipDir(v) { return v.clone().multiplyScalar(-1); }
+
+    function onPointerDown(e) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      mouse.set(x, y);
+
+      raycaster.setFromCamera(mouse, camera);
+
+      if (nextModel2 && vertShader) {
+        const hitNext2 = raycaster.intersectObject(nextModel2, true);
+        if (hitNext2.length > 0) {
+          const tf = getvertShaderFocus(1.0);
+
+          const oppositeDir = tf ? tf.fromDir.clone().multiplyScalar(-1) : new THREE.Vector3(-0.6, 0.15, -1);
+          const dist = tf ? Math.max(0.5, tf.distance * 0.6) : 1.2; // 👈 0.6 = 60% ของระยะเดิม (ใกล้ขึ้น)
+          const h = tf ? tf.height : 0.6;
+          const ctr = tf ? tf.center : vertShader.position;
+          const dur = tf ? tf.duration : 1.0;
+
+          focusCameraTo(ctr, { distance: dist, height: h, fromDir: oppositeDir }, dur);
+          return;
+        }
+      }
+
+      if (nextModel && torusMesh) {
+        const hitNext = raycaster.intersectObject(nextModel, true);
+        if (hitNext.length > 0) {
+          const tf = getTorusFocus(1.0);
+          if (tf) {
+            focusCameraTo(
+              tf.center,
+              { distance: tf.distance, height: tf.height, fromDir: tf.fromDir },
+              tf.duration
             );
+          } else {
+            focusCameraTo(
+              torusMesh.position,
+              { distance: 2.0, height: 0.6, fromDir: new THREE.Vector3(0.6, 0.15, 1) },
+              1.0
+            );
+          }
+          return;
+        }
+      }
 
-            // Grid helper (ถ้ารบกวนสายตา ลบออกได้)
-            const grid = new THREE.GridHelper(10, 10, 0x666666, 0x333333);
-            grid.position.y = -0.001;
-            scene.add(grid);
+      if (wetSignModel && abtmeModel) {
+        const hitWet = raycaster.intersectObject(wetSignModel, true);
+        if (hitWet.length > 0) {
+          focusCameraTo(
+            abtmeModel.position,
+            { distance: 2.0, height: 0.6, fromDir: new THREE.Vector3(-1, 0, 1) },
+            1.0
+          );
+          return;
+        }
+      }
 
-            const textureLoader2 = new THREE.TextureLoader();
-            textureLoader2.load('https://sitapich-t.github.io/icg/final-project/blink.jpg', function (texture) {
-                const geometry = new THREE.PlaneGeometry(2, 2);
-                const material = new THREE.MeshBasicMaterial({ map: texture });
-                const plane = new THREE.Mesh(geometry, material);
-                plane.position.set(3.8, 8, -4);
-                scene.add(plane);
-            });
+      if (workModel && ball) {
+        const hitWork = raycaster.intersectObject(workModel, true);
+        if (hitWork.length > 0) {
+          const bf = getBallFocus(1.0);
+          if (bf) {
+            focusCameraTo(
+              bf.center,
+              { distance: bf.distance, height: bf.height, fromDir: bf.fromDir },
+              bf.duration
+            );
+          } else {
+            focusCameraTo(ball.position, { distance: 2.0, height: 0.4, fromDir: new THREE.Vector3(0.6, 0.15, 1) }, 1.0);
+          }
+          return;
+        }
+      }
 
-            // --- Load MTL -> OBJ ---
-            const mtlLoader = new THREE.MTLLoader();
-            // ตั้ง path ถ้าไฟล์อยู่คนละโฟลเดอร์ เช่น mtlLoader.setPath('/assets/');
-            mtlLoader.load('https://sitapich-t.github.io/icg/final-project/home.mtl', (materials) => {
-                materials.preload();
+      if (abtmeModel) {
+        const hitAbt = raycaster.intersectObject(abtmeModel, true);
+        if (hitAbt.length > 0) {
+          const prof = getProfileFocus(1.0); // ใช้ตัวช่วยเดิมของคุณ
+          if (prof) {
+            focusCameraTo(
+              prof.center,
+              { distance: prof.distance, height: prof.height, fromDir: prof.fromDir },
+              prof.duration
+            );
+          } else {
+            const fallbackLook = new THREE.Vector3(4.05, 1.28, 0.33);
+            focusCameraTo(fallbackLook, { distance: 1.2, height: 0.4, fromDir: new THREE.Vector3(0, 0, -1) }, 1.0);
+          }
+          return;
+        }
+      }
 
-                const objLoader = new THREE.OBJLoader();
-                objLoader.setMaterials(materials);
+      if (backModel && abtmeModel) {
+        const hitBack = raycaster.intersectObject(backModel, true);
+        if (hitBack.length > 0) {
+          focusCameraTo(
+            abtmeModel.position,
+            { distance: 2.0, height: 0.6, fromDir: new THREE.Vector3(-1, 0, 1) },
+            1.0
+          );
+          return;
+        }
+      }
 
-                objLoader.load(
-                    'https://sitapich-t.github.io/icg/final-project/home.obj',
-                    (object) => {
-                        // ปรับค่าตามต้องการ
-                        object.traverse((child) => {
-                            if (child.isMesh) {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                                // ถ้าอยากบังคับวัสดุเป็น PBR มาตรฐาน แทนวัสดุจาก MTL:
-                                // child.material = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.6 });
-                            }
-                        });
+      if (backModel2 && abtmeModel) {
+        const hitBack2 = raycaster.intersectObject(backModel2, true);
+        if (hitBack2.length > 0) {
+          focusCameraTo(
+            abtmeModel.position,
+            { distance: 2.0, height: 0.6, fromDir: new THREE.Vector3(-1, 0, 1) },
+            1.0
+          );
+          return;
+        }
+      }
+    }
 
-                        // scale / position (แก้ตามโมเดลจริง)
-                        object.scale.set(1, 1, 1);
-                        object.position.set(0, 0, 0);
-                        object.rotation.y = Math.PI * 0.0;
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
 
-                        scene.add(object);
-                    },
-                    (xhr) => {
-                        // progress (optional)
-                        if (xhr.lengthComputable) {
-                            const pct = (xhr.loaded / xhr.total * 100).toFixed(1);
-                            console.log(`Loading OBJ: ${pct}%`);
-                        }
-                    },
-                    (err) => {
-                        console.error('เกิดข้อผิดพลาดตอนโหลด OBJ:', err);
-                    }
-                );
-            }, undefined, (err) => {
-                console.error('เกิดข้อผิดพลาดตอนโหลด MTL:', err);
-            });
+    ball = new THREE.Mesh(
+      new THREE.SphereBufferGeometry(0.65, 64, 64),
+      new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0.9,
+        roughness: 0.1,
+        envMapIntensity: 1.0  // จะเห็นผลชัดเมื่อเราเซ็ต envMap หลัง PMREM โหลด (ทำแล้วด้านบน)
+      })
+    );
+    ball.castShadow = true;
+    ball.position.set(0, 1, 0);
+    ball.scale.set(0.5, 0.5, 0.5);
+    scene.add(ball);
 
-            // --- Resize handler ---
-            addEventListener('resize', () => {
-                camera.aspect = innerWidth / innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(innerWidth, innerHeight);
-            });
+    // --- Uniforms (มี texture fallback สีขาว 1x1) ---
+    const white = new THREE.DataTexture(new Uint8Array([255, 255, 255]), 1, 1, THREE.RGBFormat);
+    white.needsUpdate = true;
 
-            // --- Render loop ---
-            (function animate() {
-                requestAnimationFrame(animate);
-                renderer.render(scene, camera);
-            })();
-        })();
-    </script>
+    const uniforms = {
+      uTime: { value: 0.0 },
+      uLightDir: { value: new THREE.Vector3(0.4, 1.0, 0.8).normalize() },
+      uTex: { value: white }
+    };
+
+    // พยายามโหลด stripe.jpg ถ้าโหลดได้ค่อยสลับมาใช้
+    new THREE.TextureLoader().load(
+      'https://sitapich-t.github.io/icg/final-project/Checks & Tartans (A).jpeg',
+      (tex) => {
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        uniforms.uTex.value = tex;
+      },
+      undefined,
+      () => { /* ถ้า error ก็ใช้ fallback ต่อไป */ }
+    );
+
+    // --- Shaders ---
+    const vert = `
+    uniform float uTime;
+    varying vec3 vNormal;
+    varying vec3 vPosW;
+    varying vec2 vUv;
+
+    void main(){
+      vec3 pos = position;
+
+      // << แกนหลักตามหัวข้อ: ขยับ z ด้วย sine >>
+      pos.z += sin(pos.x * 3.14159265 + uTime) * 0.2;
+
+      vUv = uv;
+      // normal ใน world space
+      vNormal = normalize(mat3(modelMatrix) * normal);
+      // position ใน world space
+      vPosW = (modelMatrix * vec4(pos, 1.0)).xyz;
+
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+  `;
+
+    const frag = `
+    precision mediump float;
+    varying vec3 vNormal;
+    uniform vec3 uLightDir;
+    varying vec3 vPosW;
+    varying vec2 vUv;
+    uniform sampler2D uTex;
+
+    void main(){
+      // diffuse toon-ish
+      float diffuse = clamp(dot(normalize(vNormal), normalize(uLightDir)), 0.0, 1.0);
+      float levels = 3.0;
+      diffuse = floor(diffuse * levels) / levels;
+      diffuse += 0.5;
+
+      // specular step-ish
+      vec3 R = reflect(-normalize(uLightDir), normalize(vNormal));
+      vec3 V = normalize(cameraPosition - vPosW);
+      float specular = max(pow(max(dot(R, V), 0.0), 16.0), 0.0);
+      specular = smoothstep(0.4, 0.6, specular);
+      if (diffuse <= 0.5) specular = 0.0;
+
+      vec3 base = texture2D(uTex, vUv).rgb;
+      vec3 color = base * diffuse + vec3(specular);
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+
+    // --- Geometry / Material / Mesh ---
+    // ใช้ Torus พร้อม subdivision สูงหน่อยเพื่อให้เห็นการขยับ
+    const geo = new THREE.TorusBufferGeometry(0.7, 0.2, 128, 256);
+    const mat = new THREE.ShaderMaterial({
+      vertexShader: vert,
+      fragmentShader: frag,
+      uniforms: uniforms
+      // wireframe: true
+    });
+    torusMesh = new THREE.Mesh(geo, mat);
+    torusMesh.position.set(-3, 1, -3);
+    torusMesh.scale.set(0.5, 0.5, 0.5);
+    scene.add(torusMesh);
+
+    const uniforms2 = {
+      uTime: { value: 0.1 },
+      uHeight: { value: null } // texture ที่จะโหลดมา
+    };
+    // ---- Shaders (sample texture ใน vertex แล้วดัน pos.z) ----
+    const vert2 = `
+    uniform sampler2D uHeight;
+    uniform float uTime;
+
+    varying float vH;
+
+    void main(){
+      vec3 pos = position;
+      float h = texture2D(uHeight, uv).r * sin(uTime) + 1.0; 
+      pos.z = pos.z + (h * 0.8);
+      vH = h;                             
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+  `;
+    const frag2 = `
+    precision mediump float;
+    varying float vH;
+    void main(){
+      // ระบายสีตามความสูง: ดำ→น้ำเงิน→ฟ้า
+      gl_FragColor = vec4(0.2*vH, 0.5*vH + 0.2, 1.0*vH + 0.1, 1.0);
+    }
+  `;
+
+    // โหลด texture แล้วค่อยสร้าง geometry/material ให้สัดส่วนตรงกับรูป
+    //https://upload.wikimedia.org/wikipedia/commons/7/71/Black.png
+    //https://www.shutterstock.com/shutterstock/videos/3608118583/thumb/10.jpg?ip=x480
+    new THREE.TextureLoader().load('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0DY_m-7c3tjtop15ihxcOGXS1VVdK4EyDJfIkVZXI_-Rs9IqSkYrzorod8RACFrD4RO8&usqp=CAU', (tex) => {
+
+      uniforms2.uHeight.value = tex;
+      const geo = new THREE.PlaneBufferGeometry(4, 2, 100, 100);
+      const mat = new THREE.ShaderMaterial({
+        vertexShader: vert2,
+        fragmentShader: frag2,
+        uniforms: uniforms2,
+        //wireframe: true, // เปิดถ้าอยากดูเส้นตาราง
+        side: THREE.DoubleSide
+
+      });
+
+      vertShader = new THREE.Mesh(geo, mat);
+      vertShader.position.set(3.8, 0.4, 3.8);
+      vertShader.scale.set(0.2, 0.2, 0.2);
+      vertShader.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
+      scene.add(vertShader);
+    });
+
+    // --- Resize ---
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    // --- Animate loop ---
+    const clock = new THREE.Clock();
+    function loop() {
+      const dt = clock.getDelta();
+      dir.position.x = 3 + Math.sin(clock.elapsedTime) * 1.0;
+
+      if (tween) {
+        tween.t += dt;
+        const k = Math.min(1, tween.t / tween.d);
+        const e = k < 0.5 ? 2 * k * k : -1 + (4 - 2 * k) * k;
+        camera.position.lerpVectors(tween.fromPos, tween.toPos, e);
+        controls.target.lerpVectors(tween.fromTarget, tween.toTarget, e);
+        if (k >= 1) tween = null;
+      }
+
+      uniforms2.uTime.value += 0.05;
+
+      uniforms.uTime.value = clock.getElapsedTime();
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
 </body>
 
-
 </html>
-
